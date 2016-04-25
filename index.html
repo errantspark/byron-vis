@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>byron flight visualizer</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script type="x-shader/x-vertex" id="vertexshader">
+      attribute vec3 tangent;
+      attribute float dir;
+      attribute float climb;
+
+      varying float vClimb;
+      varying float altitude;
+      void main() {
+      //tangent*0.5+vec3(0.5,0.5,0.5);
+        altitude = position.y;
+        vClimb = climb;
+        vec4 transformedTangent = projectionMatrix * modelViewMatrix * vec4(tangent, 0.0);
+        vec2 screenTangent = transformedTangent.xy;
+        vec4 transformedPosition = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        vec2 normal =( normalize(screenTangent.yx * vec2(1, -1)) * transformedPosition.w + normalize(screenTangent.yx * vec2(1, -1)) * 99.0 )  /100.0;
+        gl_Position = transformedPosition + vec4(0.3 * normal * dir, 0.0, 0.0);
+      }
+
+    </script>
+    <script type="x-shader/x-fragment" id="fragmentshader">
+      uniform vec3 color;
+      uniform float minalt;
+      uniform float maxalt;
+      uniform sampler2D scalemap;
+
+      varying float vClimb;
+      varying float altitude;
+      void main() {
+        float opacity = 1.0;
+        //float percentmax = (vposition.y/500.0);
+        float nclimb =  (vClimb / 5.0)+0.5;
+        //gl_FragColor = vec4( altitude/(10.0*maxalt), 0.0, 0.0, opacity);
+        gl_FragColor = texture2D(scalemap, vec2(0.5,nclimb));
+
+      }
+    </script>
+  </head>
+
+  <body>
+    <div id="info">
+      byron flight visualizer
+    </div>
+    <!--
+    <div id="sidebar" class="sidebarhide">
+      <a href="javascript:void(0)">
+        <div id="sidebarbutton" onclick="sideToggle()">
+        </div>
+      </a>
+
+
+    </div>
+    -->
+    <div id="filedrop">
+      <br>
+      <br>
+      <br>
+      DROP IGC FILE HERE!
+
+      </div>
+      <div id="infobar">
+        <div id="stats">
+          <br>
+          Alt:   <span id="altitude">dummy</span><br>
+          Vario: <span id="climb">dummy</span><br>
+          Time: <span id="time">dummy</span><br>
+
+        </div>
+        <div id="graph">
+        </div>
+      </div>
+
+    <script type="text/javascript" src="libs/three.min.js"></script>
+    <script type="text/javascript" src="libs/three/OrbitControls.js"></script>
+    <script type="text/javascript" src="libs/three/OBJLoader.js"></script>
+    <script type="text/javascript" src="libs/chroma.min.js"></script>
+    <script type="text/javascript" src="libs/suncalc.min.js"></script>
+    <script type="text/javascript" src="libs/d3.min.js"></script>
+    <script type="text/javascript" src="script.js"></script>
+  </body>
+</html>

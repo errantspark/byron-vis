@@ -1,2 +1,2 @@
 # byron-vis
-HTML5 Byron IGC Visualizer
+HTML5 IGC Visualizer for flights out of Byron Airport

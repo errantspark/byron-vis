@@ -1,0 +1,4 @@
+{
+"libs": ["browser","threejs"],
+"plugins": {"threejs":{}}
+}
