@@ -73,7 +73,8 @@ THREE.OrbitControls = function ( object, domElement ) {
 	this.keys = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40 };
 
 	// Mouse buttons
-	this.mouseButtons = { ORBIT: THREE.MOUSE.LEFT, ZOOM: THREE.MOUSE.MIDDLE, PAN: THREE.MOUSE.RIGHT };
+  // TODO fix this breaks pan with the mouse
+	this.mouseButtons = { ORBIT: THREE.MOUSE.RIGHT, ZOOM: THREE.MOUSE.MIDDLE, PAN: 4};
 
 	// for reset
 	this.target0 = this.target.clone();
@@ -688,7 +689,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 			state = STATE.DOLLY;
 
-		} else if ( event.button === scope.mouseButtons.PAN ) {
+		} else if ( event.buttons === scope.mouseButtons.PAN ) {
 
 			if ( scope.enablePan === false ) return;
 
@@ -836,6 +837,8 @@ THREE.OrbitControls = function ( object, domElement ) {
 		switch ( event.touches.length ) {
 
 			case 1: // one-fingered touch: rotate
+        event.preventDefault();
+        event.stopPropagation();
 
 				if ( scope.enableRotate === false ) return;
 				if ( state !== STATE.TOUCH_ROTATE ) return; // is this needed?...

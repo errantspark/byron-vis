@@ -2,8 +2,9 @@
 var container
 
 var camera, scene, renderer
-var mouse = {}
-var currentIndex = 0
+var state = {}
+state.mouse = {}
+state.index = 0
 
 var igc,
   indicatorObject,
@@ -394,7 +395,7 @@ var updateSunPos = function (date) {
 
 var addIGCToScene = function (parsedIGC, scene, name) {
   igc = parsedIGC
-  currentIndex = 0
+  state.index = 0
   makeGraph(igc)
   var shaderMaterial = shaderMaterialFactory(parsedIGC.stats)
   var pathObject = scene.getObjectByName(name)
@@ -563,7 +564,10 @@ var makeGraph = function (igc) {
 
   var mousemove = function () {
     var x0 = x.invert(d3.mouse(this)[0])
-    currentIndex = bisectDate(data, x0, 1)
+    if (state.mouse.buttons === 1){
+      state.index = bisectDate(data, x0, 1)
+      updateCurrent(state.index)
+    }
   }
   svg.append('rect')
     .attr('class', 'overlay')
@@ -598,7 +602,7 @@ function init () {
 
   var onError = function (xhr) {}
 
-  // texture
+  /* texture
   var texture = new THREE.Texture()
   var Imageloader = new THREE.ImageLoader(manager)
 
@@ -606,6 +610,7 @@ function init () {
     texture.image = image
     texture.needsUpdate = true
   })
+ */
 
   var skyLight = new THREE.HemisphereLight(0xa6d4ff, 0x080600, 2)
   scene.add(skyLight)
@@ -703,8 +708,28 @@ function init () {
 
   // event listeners
   window.addEventListener('resize', onWindowResize, false)
-  document.addEventListener('mousemove', onDocumentMouseMove, false)
+  scene.addEventListener('mousemove', onDocumentMouseMove, false)
   document.addEventListener('dblclick', onDoubleClick, false)
+  document.addEventListener('mousedown', onMDown, false)
+  document.addEventListener('mouseup', onMUp, false)
+}
+
+function onMUp (e) {
+  state.mouse.buttons = e.buttons
+  state.mouse.button = e.button
+}
+function onMDown (e) {
+  state.mouse.buttons = e.buttons
+  state.mouse.button = e.button
+  raycaster.setFromCamera(state.mouse, camera)
+  var picker = scene.getObjectByName('picker')
+  if (picker) {
+    var intersects = raycaster.intersectObject(picker, true)
+    if (intersects.length > 0) {
+      state.index = intersects[0].index
+    }
+    updateCurrent(state.index)
+  }
 }
 
 function onWindowResize () {
@@ -720,13 +745,13 @@ function onWindowResize () {
 
 function onDocumentMouseMove (event) {
   event.preventDefault()
-  mouse.x = (event.clientX / window.innerWidth) * 2 - 1
-  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+  state.mouse.x = (event.clientX / window.innerWidth) * 2 - 1
+  state.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
 }
 
 function onDoubleClick (event) {
   var picker = scene.getObjectByName('picker')
-  var index = currentIndex
+  var index = state.index
   var ppos = picker.geometry.attributes.position.array
   var pos = new THREE.Vector3(ppos[index * 3], ppos[index * 3 + 1], ppos[index * 3 + 2])
   pos = pos.multiply(picker.parent.scale).add(picker.parent.position)
@@ -754,15 +779,6 @@ var updateCurrent = function (index) {
 
 var render = function () {
   controls.update()
-  raycaster.setFromCamera(mouse, camera)
-  var picker = scene.getObjectByName('picker')
-  if (picker) {
-    var intersects = raycaster.intersectObject(picker, true)
-    if (intersects.length > 0) {
-      currentIndex = intersects[0].index
-    }
-    updateCurrent(currentIndex)
-  }
 
   renderer.render(scene, camera)
 }
