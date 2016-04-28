@@ -700,6 +700,7 @@ function init () {
   controls.dampingFactor = 0.1
   // controls.maxPolarAngle = 1.56
   controls.rotateSpeed = 0.3
+	controls.mouseButtons = { ORBIT: THREE.MOUSE.LEFT, ZOOM: THREE.MOUSE.MIDDLE, PAN: THREE.MOUSE.RIGHT};
   container.appendChild(renderer.domElement)
 
   // raycaster
@@ -708,7 +709,7 @@ function init () {
 
   // event listeners
   window.addEventListener('resize', onWindowResize, false)
-  scene.addEventListener('mousemove', onDocumentMouseMove, false)
+  renderer.domElement.addEventListener('mousemove', onDocumentMouseMove, false)
   document.addEventListener('dblclick', onDoubleClick, false)
   document.addEventListener('mousedown', onMDown, false)
   document.addEventListener('mouseup', onMUp, false)
@@ -721,6 +722,7 @@ function onMUp (e) {
 function onMDown (e) {
   state.mouse.buttons = e.buttons
   state.mouse.button = e.button
+
   raycaster.setFromCamera(state.mouse, camera)
   var picker = scene.getObjectByName('picker')
   if (picker) {
@@ -730,6 +732,7 @@ function onMDown (e) {
     }
     updateCurrent(state.index)
   }
+
 }
 
 function onWindowResize () {
@@ -779,7 +782,6 @@ var updateCurrent = function (index) {
 
 var render = function () {
   controls.update()
-
   renderer.render(scene, camera)
 }
 
