@@ -1,8 +1,8 @@
 # byron-vis
-This tool
-HTML5 IGC Visualizer for flights out of Byron Airport
+This tool lets you show off or analyze your glider flights out of Byron airport. Just hit the link below and drag your *.igc file into the browser window. 
+Everything is handled client side, if it doesn't work for you try a recent version of Google Chrome. I'm using ES6 which isn't supported well in all browsers, maybe send me a pull request for transpiling with babel?
 
-[Live Demo](http://errantspark.github.io/byron-vis/)
+[Visualizer Link](http://errantspark.github.io/byron-vis/)
 
 [![License](https://img.shields.io/badge/license-mit-blue.svg)](https://opensource.org/licenses/MIT) [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg)](http://standardjs.com/)
 
