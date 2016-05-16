@@ -1,4 +1,4 @@
-var parser = function () {
+var Parser = function () {
   var that = this
 
   this.parseIGC = function (igc) {
@@ -152,5 +152,4 @@ var parser = function () {
 
     return output
   }
-
 }

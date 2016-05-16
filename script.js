@@ -13,7 +13,7 @@ var igc,
   windowHalfX,
   windowHalfY
 
-var IGCparser = new parser()
+var IGCparser = new Parser()
 
 var scaleToLegend = function (scale, domel) {
   var canvas = document.createElement('canvas')
@@ -251,7 +251,6 @@ var addIGCToScene = function (parsedIGC, scene, name) {
 
 var importLogic = function (rawfile) {
   var igc = IGCparser.parseToJSON(rawfile)
-  // this is for debugging
   addIGCToScene(igc, scene, 'flightpath')
   scene.getObjectByName('flightpath').scale.y = 2
 }
@@ -311,6 +310,7 @@ var sideToggle = function () { // eslint-disable-line
     element.classList.add('sidebarhide')
   }
 }
+var updatePos
 
 var makeGraph = function (igc) {
   d3.select('svg').remove()
@@ -328,7 +328,7 @@ var makeGraph = function (igc) {
     bottom: 30,
     left: 50
   }
-  var width = boxWidth * 0.718 - margin.left - margin.right
+  var width = boxWidth - margin.left - margin.right
   var height = boxHeight - margin.top - margin.bottom
 
   var timeExtent = d3.extent(data, function (x) {
@@ -342,14 +342,6 @@ var makeGraph = function (igc) {
   var bisectDate = d3.bisector(function (d) {
     return d[1]
   }).left
-
-  var line = d3.svg.line()
-    .x(function (d) {
-      return x(d.date)
-    })
-    .y(function (d) {
-      return y(d.close)
-    })
 
   var x = d3.time.scale()
     .range([0, width])
@@ -398,25 +390,62 @@ var makeGraph = function (igc) {
     .attr('dy', '.61em')
     // .style("text-anchor", "end")
     // .text("Alt (m)")
+  var indicator = svg.append('line')
+    .attr('x1', 0)
+    .attr('y1', 0)
+    .attr('x2', 0)
+    .attr('y2', y.range()[0])
+    .attr('class', 'line indicator')
+
+    // there must be a better way
+  updatePos = function (n) {
+    var xp = x(data[n][1])
+    indicator.attr('x1', xp)
+      .attr('x2', xp)
+  }
 
   svg.append('path')
     .datum(data)
     .attr('class', 'line')
     .attr('d', line)
 
-  var mousemove = function () {
+  var click = function () {
     var x0 = x.invert(d3.mouse(this)[0])
-    if (state.mouse.buttons === 1){
-      state.index = bisectDate(data, x0, 1)
-      updateCurrent(state.index)
-    }
+    state.index = bisectDate(data, x0, 1)
+    updateCurrent(state.index)
   }
+
+  var drag = d3.behavior.drag()
+    .on('dragstart', function () {
+      d3.event.sourceEvent.stopPropagation()
+    })
+    .on('drag', function () {
+      var selector
+      if (d3.mouse(this)[1] > 0) {
+        this.lastPos = d3.mouse(this)[0]
+        selector = this.lastPos
+      } else {
+        var delta = d3.mouse(this)[0] - this.lastPos
+        // number between 1 and 0 representing how far away ish you are from the top of the window
+        var mod = (window.innerHeight / 1.5 + d3.mouse(this)[1] ) / (window.innerHeight / 1.5)
+
+        if (mod < 0) {
+          mod = 0.2
+        }
+
+        selector = this.lastPos + delta * mod * mod
+      }
+      var x0 = x.invert(selector)
+      state.index = bisectDate(data, x0, 1) - 1
+      updateCurrent(state.index)
+    })
   svg.append('rect')
     .attr('class', 'overlay')
     .attr('width', width)
     .attr('height', height)
     .attr('fill', 'rgba(0,0,0,0)')
-    .on('mousemove', mousemove)
+    .on('click', click)
+    .call(drag)
 }
 
 function init () {
@@ -542,12 +571,12 @@ function init () {
   controls.dampingFactor = 0.1
   // controls.maxPolarAngle = 1.56
   controls.rotateSpeed = 0.3
-	controls.mouseButtons = { ORBIT: THREE.MOUSE.LEFT, ZOOM: THREE.MOUSE.MIDDLE, PAN: THREE.MOUSE.RIGHT};
+  controls.mouseButtons = { ORBIT: THREE.MOUSE.LEFT, ZOOM: THREE.MOUSE.MIDDLE, PAN: THREE.MOUSE.RIGHT}
   container.appendChild(renderer.domElement)
 
   // raycaster
   raycaster = new THREE.Raycaster()
-  raycaster.linePrecision = 3
+  raycaster.linePrecision = 0.8
 
   // event listeners
   window.addEventListener('resize', onWindowResize, false)
@@ -574,7 +603,6 @@ function onMDown (e) {
     }
     updateCurrent(state.index)
   }
-
 }
 
 function onWindowResize () {
@@ -585,6 +613,7 @@ function onWindowResize () {
   camera.updateProjectionMatrix()
 
   renderer.setSize(window.innerWidth, window.innerHeight)
+  // probably should just resize the graph?
   makeGraph(igc)
 }
 
@@ -619,6 +648,7 @@ var updateCurrent = function (index) {
   document.getElementById('climb').innerText = Math.round(igc.climb[index] * 8) / 8 + 'm/s'
   var now = new Date(igc.date - -igc.time[index])
   document.getElementById('time').innerText = now.toLocaleTimeString()
+  updatePos(index)
   updateSunPos(now)
 }
 
@@ -629,6 +659,10 @@ var render = function () {
 
 var animate = function () {
   window.requestAnimationFrame(animate)
+  //this is a dumb kludge to prevent going below ground
+  if (camera.position.y < 6){
+    camera.position.y = 6
+  }
   render()
 }
 
